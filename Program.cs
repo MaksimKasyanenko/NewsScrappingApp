@@ -21,31 +21,29 @@ namespace NewsParsingApp
 
             int updateTimeoutMiliseconds = settings.UpdateTimeoutMinutes * 60 * 1000;
             var telegramChannelClient = new TelegramChannelClient(settings.TelegramBotToken, settings.TelegramTargetChatId, new HttpClient());
+            using var context = new NewsDbContext(settings.ConnectionString);
 
             while (true)
             {
                 Console.WriteLine("Updating news...");
                 try
                 {
-                    using (var context = new NewsDbContext())
+                    var lastPublicationDateTime = await GetLastPublicationDateTime(context);
+                    List<News> news = await new UnianUaNewsProvider().GetNewsAsync(lastPublicationDateTime);
+                    if (news.Count > 0)
                     {
-                        var lastNews = await context.News.OrderByDescending(n => n.PublicationData).FirstOrDefaultAsync();
-                        List<News> news = await new UnianUaNewsProvider().GetNewsAsync(lastNews?.PublicationData ?? (DateTime.Now - new TimeSpan(0, 10, 0)));
-                        if (news.Count > 0)
-                        {
-                            context.AddRange(news);
-                            await context.SaveChangesAsync();
-                        }
+                        context.AddRange(news);
+                        await context.SaveChangesAsync();
+                    }
 
-                        var unpublishedNews = await context.News.Where(n => !n.PublishedOnChannel).ToListAsync();
-                        foreach (var n in unpublishedNews.OrderBy(n => n.PublicationData))
-                        {
-                            await telegramChannelClient.SendMessageAsync(n.SectionName, n.Title, n.Link, n.PublicationData);
-                            n.PublishedOnChannel = true;
-                            context.News.Update(n);
-                            await context.SaveChangesAsync();
-                            Thread.Sleep(2000);  //to prevent telegram exception (too many requests)
-                        }
+                    var unpublishedNews = await context.News.Where(n => !n.PublishedOnChannel).ToListAsync();
+                    foreach (var n in unpublishedNews.OrderBy(n => n.PublicationData))
+                    {
+                        await telegramChannelClient.SendMessageAsync(n.SectionName, n.Title, n.Link, n.PublicationData);
+                        n.PublishedOnChannel = true;
+                        context.News.Update(n);
+                        await context.SaveChangesAsync();
+                        Thread.Sleep(2000);  //to prevent telegram exception (too many requests)
                     }
                 }
                 catch (System.TimeoutException) { continue; }
@@ -53,6 +51,15 @@ namespace NewsParsingApp
                 Console.WriteLine($"Sleeping {settings.UpdateTimeoutMinutes} minutes...");
                 Thread.Sleep(updateTimeoutMiliseconds);
             }
+        }
+
+        private async static Task<DateTime> GetLastPublicationDateTime(NewsDbContext context)
+        {
+            return (
+                    await context.News.OrderByDescending(n => n.PublicationData).FirstOrDefaultAsync()
+                )
+                ?.PublicationData
+                ?? (DateTime.Now - new TimeSpan(0, 10, 0));
         }
     }
 }

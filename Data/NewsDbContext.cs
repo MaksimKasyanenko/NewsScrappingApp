@@ -5,19 +5,18 @@ namespace NewsParsingApp.Data
 {
     public class NewsDbContext : DbContext
     {
-        public NewsDbContext()
+        public NewsDbContext(string connectionString)
         {
-            var path = Environment.CurrentDirectory;
-            DbPath = System.IO.Path.Join(path, "news.db");
+            this._connectionString = connectionString;
         }
         
-        private string DbPath {get;}
+        private readonly string _connectionString;
 
         public DbSet<News> News { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite($"Data Source={DbPath};");
+            optionsBuilder.UseSqlite(this._connectionString);
         }
     }
 }
