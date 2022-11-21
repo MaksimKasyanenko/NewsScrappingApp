@@ -22,7 +22,7 @@ namespace NewsParsingApp
             var telegramChannelClient = new TelegramChannelClient(settings.TelegramBotToken, settings.TelegramTargetChatId, new HttpClient());
             using var context = new NewsDbContext();
 
-            var newsProviders = new NewsProvider[] {
+            var newsProviders = new List<NewsProvider>() {
                 new UnianUaNewsProvider(),
                 new UkrNetNewsProvider()
             };
@@ -34,11 +34,14 @@ namespace NewsParsingApp
                 try
                 {
                     var lastPublicationDateTime = await GetLastPublicationDateTime(context);
-
                     var news = new List<News>();
-                    foreach(var provider in newsProviders)
+
+                    var gettingNewsTasks = newsProviders.Select(np => np.GetNewsAsync(lastPublicationDateTime)).ToArray();
+                    Task.WaitAll(gettingNewsTasks);
+
+                    foreach(var completedTask in gettingNewsTasks)
                     {
-                        var n = await provider.GetNewsAsync(lastPublicationDateTime);
+                        var n = completedTask.Result;
                         if(n != null)
                         {
                             news.AddRange(n);
