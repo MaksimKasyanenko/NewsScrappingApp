@@ -11,8 +11,8 @@ Required:
 
 Get installed:
 
-1. To run command <dotnet restore> in CLI
+1. To run command [dotnet restore] in CLI
 2. To rename the 'appsettings.example.json' file to 'appsettings.json'
 3. To specify telegram bot token and channel name in the 'appsettings.json' file
-4. To run <dotnet ef database update> in CLI
-5. To run <dotnet run> command
+4. To run [dotnet ef database update] in CLI
+5. To run [dotnet run] command
