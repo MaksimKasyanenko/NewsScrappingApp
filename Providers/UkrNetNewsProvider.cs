@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using HtmlAgilityPack;
 using NewsParsingApp.Data;
@@ -11,14 +10,11 @@ namespace NewsParsingApp.Providers
     {
         protected override string Url => "https://www.ukr.net/";
 
-        protected override List<News> ScrapeOut(string htmlContent, DateTime sinceDateTime)
+        protected override List<News> ScrapeOut(HtmlDocument htmlDoc, DateTime sinceDateTime)
         {
             var res = new List<News>();
-
-            var htmlDoc = new HtmlDocument();
-            htmlDoc.LoadHtml(htmlContent);
-
             var sections = htmlDoc.DocumentNode.SelectSingleNode("//article").ChildNodes;
+            
             foreach(var feedSection in sections)
             {
                 string sectionName = feedSection.SelectSingleNode("./h2")?.InnerText.Trim() ?? feedSection.SelectSingleNode("./div/a")?.InnerText.Trim();
@@ -31,7 +27,7 @@ namespace NewsParsingApp.Providers
                 {
                     Time time = new Time(feedItem.SelectSingleNode("./time").InnerText);
                     DateTime temp = time.ToDateTime(dateTime.Year, dateTime.Month, dateTime.Day);
-                    
+
                     if(temp <= DateTime.Now)
                     {
                         dateTime = temp;

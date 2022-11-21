@@ -30,7 +30,7 @@ namespace NewsParsingApp
                     using (var context = new NewsDbContext())
                     {
                         var lastNews = await context.News.OrderByDescending(n => n.PublicationData).FirstOrDefaultAsync();
-                        List<News> news = await new UkrNetNewsProvider().GetNewsAsync(lastNews?.PublicationData ?? (DateTime.Now - new TimeSpan(0, 10, 0)));
+                        List<News> news = await new UnianUaNewsProvider().GetNewsAsync(lastNews?.PublicationData ?? (DateTime.Now - new TimeSpan(0, 10, 0)));
                         if (news.Count > 0)
                         {
                             context.AddRange(news);

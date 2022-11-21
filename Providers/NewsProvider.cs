@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using PuppeteerSharp;
+using HtmlAgilityPack;
 using NewsParsingApp.Data;
 
 namespace NewsParsingApp.Providers
@@ -12,11 +13,11 @@ namespace NewsParsingApp.Providers
 
         public async Task<List<News>> GetNewsAsync(DateTime sinceDateTime)
         {
-            string htmlContent = await GetPageContentAsync();
-            return ScrapeOut(htmlContent, sinceDateTime) ?? new List<News>();
+            var htmlDoc = await GetHtmlDocumentAsync();
+            return ScrapeOut(htmlDoc, sinceDateTime) ?? new List<News>();
         }
 
-        protected async virtual Task<string> GetPageContentAsync()
+        protected async virtual Task<HtmlDocument> GetHtmlDocumentAsync()
         {
             using var browserFetcher = new BrowserFetcher();
             await browserFetcher.DownloadAsync();
@@ -25,9 +26,12 @@ namespace NewsParsingApp.Providers
             await using var page = await browser.NewPageAsync();
             await page.SetExtraHttpHeadersAsync(new Dictionary<string, string>{{"Accept", "*/*"}, {"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:107.0) Gecko/20100101 Firefox/107.0"}});
             await page.GoToAsync(Url, WaitUntilNavigation.Networkidle0);
-            return await page.GetContentAsync();
+            var htmlContent = await page.GetContentAsync();
+            var htmlDoc = new HtmlDocument();
+            htmlDoc.LoadHtml(htmlContent);
+            return htmlDoc;
         }
 
-        protected abstract List<News> ScrapeOut(string htmlContent, DateTime sinceDateTime);
+        protected abstract List<News> ScrapeOut(HtmlDocument htmlDoc, DateTime sinceDateTime);
     }
 }
