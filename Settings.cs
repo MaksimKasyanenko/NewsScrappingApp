@@ -7,7 +7,5 @@ namespace NewsParsingApp
         public string TelegramTargetChatId {get;set;}
 
         public int UpdateTimeoutMinutes {get;set;}
-
-        public string ConnectionString {get;set;}
     }
 }

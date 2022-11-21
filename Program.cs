@@ -19,17 +19,32 @@ namespace NewsParsingApp
             IConfiguration config = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
             Settings settings = config.GetSection("Settings").Get<Settings>();
 
-            int updateTimeoutMiliseconds = settings.UpdateTimeoutMinutes * 60 * 1000;
             var telegramChannelClient = new TelegramChannelClient(settings.TelegramBotToken, settings.TelegramTargetChatId, new HttpClient());
-            using var context = new NewsDbContext(settings.ConnectionString);
+            using var context = new NewsDbContext();
 
+            var newsProviders = new NewsProvider[] {
+                new UnianUaNewsProvider(),
+                new UkrNetNewsProvider()
+            };
+
+            int updateTimeoutMiliseconds = settings.UpdateTimeoutMinutes * 60 * 1000;
             while (true)
             {
                 Console.WriteLine("Updating news...");
                 try
                 {
                     var lastPublicationDateTime = await GetLastPublicationDateTime(context);
-                    List<News> news = await new UnianUaNewsProvider().GetNewsAsync(lastPublicationDateTime);
+
+                    var news = new List<News>();
+                    foreach(var provider in newsProviders)
+                    {
+                        var n = await provider.GetNewsAsync(lastPublicationDateTime);
+                        if(n != null)
+                        {
+                            news.AddRange(n);
+                        }
+                    }
+
                     if (news.Count > 0)
                     {
                         context.AddRange(news);

@@ -5,9 +5,9 @@ namespace NewsParsingApp.Data
 {
     public class NewsDbContext : DbContext
     {
-        public NewsDbContext(string connectionString)
+        public NewsDbContext()
         {
-            this._connectionString = connectionString;
+            this._connectionString = "Data Source=news.db;";
         }
         
         private readonly string _connectionString;
