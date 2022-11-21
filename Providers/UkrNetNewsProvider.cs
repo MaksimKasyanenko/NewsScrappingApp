@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using HtmlAgilityPack;
 using NewsParsingApp.Data;
+using NewsParsingApp.Utils;
 
 namespace NewsParsingApp.Providers
 {
@@ -28,9 +29,9 @@ namespace NewsParsingApp.Providers
                 
                 foreach(var feedItem in feedItems)
                 {
-                    int[] time = ParseTime(feedItem.SelectSingleNode("./time").InnerText);
-
-                    DateTime temp = new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, time[0], time[1], 0);
+                    Time time = new Time(feedItem.SelectSingleNode("./time").InnerText);
+                    DateTime temp = time.ToDateTime(dateTime.Year, dateTime.Month, dateTime.Day);
+                    
                     if(temp <= DateTime.Now)
                     {
                         dateTime = temp;
@@ -55,11 +56,6 @@ namespace NewsParsingApp.Providers
                 }
             }
             return res;
-        }
-
-        private int[] ParseTime(string text)
-        {
-            return text.Split(':').Select(n => Int32.Parse(n)).ToArray();
         }
     }
 }
